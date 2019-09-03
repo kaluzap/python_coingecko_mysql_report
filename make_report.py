@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 import matplotlib.ticker as mtick
+import sys
 
 def read_crypto_data(symbol, past_hours = 48):
     
@@ -80,10 +81,36 @@ def make_a_plot_1(data, symbol, name):
     plt.close()
 
 
-#main function
 
-list_of_coins = pd.read_csv('list_id_symbol_name_coingecko.csv')
+
+
+######################################
+#the main function
+######################################
+
+if( (len(sys.argv) != 2) & (len(sys.argv) != 3)): 
+    print("Make report! V 3.0 (03.09.2019)")
+    print("Evolutions of the price as function of time in usd and btc")
+    print("The dataset is taken from the local MySQL database.")
+    print("Use: python3 make_report.py list_id_symbol_name_coingecko.csv [time_period = 24]")
+    quit()
+
+
+try:
+    list_of_coins = pd.read_csv(sys.argv[1])
+except:
+    print("Error reading file ", sys.argv[1])
+    quit()
 list_of_coins.columns = ['id', 'symbol', 'name']
+    
+
+time_period = 24
+if len(sys.argv) == 3:
+    try:
+        time_period = int(sys.argv[2])
+    except:
+        time_period = 24
+
 
 
 report_file = open("report_evolutions.html","w")
@@ -95,7 +122,7 @@ for i in range(list_of_coins.shape[0]):
     print("\t Symbol: ", list_of_coins['symbol'][i].upper())
     print("\t Name: ", list_of_coins['name'][i])
 
-    data = read_crypto_data(list_of_coins['symbol'][i].upper(), 48)
+    data = read_crypto_data(list_of_coins['symbol'][i].upper(), time_period)
     make_a_plot_1(data, list_of_coins['symbol'][i].upper(), list_of_coins['name'][i])
 
     text = '<p><font size="9" color="black">' + str(i+1) + ") " + list_of_coins['name'][i] + '</font></p>'
