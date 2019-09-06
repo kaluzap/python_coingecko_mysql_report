@@ -115,6 +115,11 @@ if len(sys.argv) == 3:
 
 report_file = open("report_evolutions.html","w")
 
+#printing the links to the different coins
+for i in range(list_of_coins.shape[0]):
+    text = '<a href="#' + list_of_coins['symbol'][i].upper() + '">[' + list_of_coins['name'][i] + ']</a>' 
+    report_file.write(text + '\n')
+    
 for i in range(list_of_coins.shape[0]):
 
     print(i, " -> ")
@@ -122,9 +127,17 @@ for i in range(list_of_coins.shape[0]):
     print("\t Symbol: ", list_of_coins['symbol'][i].upper())
     print("\t Name: ", list_of_coins['name'][i])
 
-    data = read_crypto_data(list_of_coins['symbol'][i].upper(), time_period)
-    make_a_plot_1(data, list_of_coins['symbol'][i].upper(), list_of_coins['name'][i])
-
+    try:
+        data = read_crypto_data(list_of_coins['symbol'][i].upper(), time_period)
+        make_a_plot_1(data, list_of_coins['symbol'][i].upper(), list_of_coins['name'][i])
+    except:
+        continue
+    
+    #links to jump to this coin
+    text = '<a name="' + list_of_coins['symbol'][i].upper() + '"></a>'
+    report_file.write(text + '\n')
+    
+    
     text = '<p><font size="9" color="black">' + str(i+1) + ") " + list_of_coins['name'][i] + '</font></p>'
     report_file.write(text + '\n')
     
