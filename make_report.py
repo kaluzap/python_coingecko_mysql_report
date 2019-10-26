@@ -7,10 +7,11 @@ import sys
 
 def read_crypto_data(symbol, past_hours = 48):
     
-    cnx = mysql.connector.connect(user='pablo', 
-                                  password='12345678',
-                                  host='localhost',
-                                  database='cryptos')
+    cnx = mysql.connector.connect(user = 'pablo', 
+                                  password = '12345678',
+                                  host = '192.168.0.8',
+                                  port = '3306',
+                                  database = 'cryptos')
 
     cursor = cnx.cursor(buffered=True)
 
