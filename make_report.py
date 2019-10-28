@@ -108,7 +108,7 @@ list_of_coins.columns = ['id', 'symbol', 'name']
 time_period = 24
 if len(sys.argv) == 3:
     try:
-        time_period = int(sys.argv[2])
+        time_period = eval(sys.argv[2]) #int(sys.argv[2])
     except:
         time_period = 24
 
