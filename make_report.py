@@ -9,7 +9,7 @@ def read_crypto_data(symbol, past_hours = 48):
     
     cnx = mysql.connector.connect(user = 'pablo', 
                                   password = '12345678',
-                                  host = '192.168.0.8',
+                                  host = '192.168.0.13',
                                   port = '3306',
                                   database = 'cryptos')
 
@@ -31,11 +31,14 @@ def read_crypto_data(symbol, past_hours = 48):
     except:
         return None
     
-    if(cnx.is_connected()):
-        cursor.close()
+    cursor.close()
+    
+    #if(cnx.is_connected()):
+    #    cursor.close()
     
     results = pd.DataFrame(results)
     results.columns = ['time_re', 'price_usd', 'volume_usd', 'price_btc', 'volume_btc', 'time_lu']
+    
     return results
 
 
