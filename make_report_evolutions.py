@@ -66,6 +66,8 @@ def nice_str(num):
     for i in range(len(my_str)):
         if my_str[i] != "0":
             break
+    if i > 35:
+        return f'{num}'
     return f"{num:.40f}"[: i + 3 + 2]
 
 
