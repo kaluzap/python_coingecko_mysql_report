@@ -1,3 +1,5 @@
 *.html
 /img/*.*
 nohup.out
+/list_coins/my_coin_list.csv
+
