@@ -1,3 +1,7 @@
 *.html
 /img/*.*
 nohup.out
+/list_coins/my_coin_list.csv
+/list_investments/my_list_of_investments.csv
+__pycache__/
+notebook/.ipynb_checkpoints/

@@ -1,0 +1,3 @@
+#coin   , amount    , type      , start_date            , end_date              , start_value_usd   , end_value_usd , start_value_btc   , end_value_btc
+BTG     , 12        , bitcoin   , 2019-04-27-12:00:00   ,                       , 887.2             ,               , 0.1               ,   
+BTC     , 0.0571    , usd,      , 2019-07-11-13:00:00   , 2019-08-06-00:00:00   , 653.3             , 694.03        , 0.0571            , 0.0571
