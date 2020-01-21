@@ -2,6 +2,7 @@ import mysql.connector
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
+from dateutil import tz
 import matplotlib.ticker as mtick
 import sys
 
@@ -216,10 +217,22 @@ def main(args):
     report_file.close()
 
     print(
-        "\nLast database actualization: ",
+        "\nLast database actualization (UTC): ",
         datetime.utcfromtimestamp(data["time_re"].iloc[-1]).strftime(
             "%Y-%m-%d %H:%M:%S"
         ),
+    )
+
+    from_zone = tz.tzutc()
+    to_zone = tz.tzlocal()
+
+    utc = datetime.utcfromtimestamp(data["time_re"].iloc[-1])
+    utc = utc.replace(tzinfo=from_zone)
+
+    my_zone = utc.astimezone(to_zone)
+
+    print(
+        "Last database actualization (Berlin): ", my_zone.strftime("%Y-%m-%d %H:%M:%S"),
     )
 
 
