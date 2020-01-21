@@ -1,7 +1,7 @@
 import mysql.connector
 import pandas as pd
 import matplotlib.pyplot as plt
-import datetime
+from datetime import datetime
 import matplotlib.ticker as mtick
 import sys
 
@@ -21,7 +21,7 @@ def read_crypto_data(symbol, past_hours=48):
     if cnx.is_connected() == False:
         return None
 
-    date_time_obj = datetime.datetime.now()
+    date_time_obj = datetime.now()
     time_linux_now = date_time_obj.timestamp()
     time_start = time_linux_now - past_hours * 3600
 
@@ -40,6 +40,10 @@ def read_crypto_data(symbol, past_hours=48):
     #    cursor.close()
 
     results = pd.DataFrame(results)
+
+    if results.shape[0] == 0:  # there are any row
+        return None
+
     results.columns = [
         "time_re",
         "price_usd",
@@ -67,7 +71,7 @@ def nice_str(num):
         if my_str[i] != "0":
             break
     if i > 35:
-        return f'{num}'
+        return f"{num}"
     return f"{num:.40f}"[: i + 3 + 2]
 
 
@@ -150,10 +154,16 @@ def main(args):
 
         try:
             data = read_crypto_data(list_of_coins["symbol"][i].upper(), time_period)
+
+            if data is None:
+                print("Error reading data from MySQL database")
+                continue
+
             make_a_plot_1(
                 data, list_of_coins["symbol"][i].upper(), list_of_coins["name"][i]
             )
-        except:
+        except Exception as e:
+            print("\tError!\n\t", e)
             continue
 
         # links to jump to this coin
@@ -204,6 +214,13 @@ def main(args):
         report_file.write("<p></p>\n" * 3)
 
     report_file.close()
+
+    print(
+        "\nLast database actualization: ",
+        datetime.utcfromtimestamp(data["time_re"].iloc[-1]).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        ),
+    )
 
 
 if __name__ == "__main__":
