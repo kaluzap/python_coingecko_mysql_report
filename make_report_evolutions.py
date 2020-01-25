@@ -169,10 +169,10 @@ def main(args):
 
     for i in range(list_of_coins.shape[0]):
 
-        print(i, " -> ")
-        print("\t id: ", list_of_coins["id"][i])
-        print("\t Symbol: ", list_of_coins["symbol"][i].upper())
-        print("\t Name: ", list_of_coins["name"][i])
+        print(i, " -> ", flush=True)
+        print("\t id: ", list_of_coins["id"][i], flush=True)
+        print("\t Symbol: ", list_of_coins["symbol"][i].upper(), flush=True)
+        print("\t Name: ", list_of_coins["name"][i], flush=True)
 
         try:
             data = read_crypto_data(list_of_coins["symbol"][i].upper(), time_period)
@@ -242,6 +242,7 @@ def main(args):
         datetime.utcfromtimestamp(data["time_re"].iloc[-1]).strftime(
             "%Y-%m-%d %H:%M:%S"
         ),
+        flush=True,
     )
 
     from_zone = tz.tzutc()
