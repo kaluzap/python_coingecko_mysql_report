@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import tz
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
@@ -198,11 +198,13 @@ def main(args):
 
 def print_report_totals(df_inv, totals_usd, totals_btc):
 
-    make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD", "usd")
-    make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC", "btc")
+    make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_small", "usd", "small")
+    make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_big", "usd", "big")
+    make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC_small", "btc", "small")
+    make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC_big", "btc", "big")
 
 
-def make_a_plot_totals(df_inv, data, file_name, what):
+def make_a_plot_totals(df_inv, data, file_name, what, how):
 
     fig = plt.figure(figsize=(13, 10))  # tight_layout=True)#figsize=(600,300))
     plt.subplots_adjust(
@@ -212,6 +214,10 @@ def make_a_plot_totals(df_inv, data, file_name, what):
 
     # new column with datetime values
     data["date"] = pd.to_datetime(data["time_re"], unit="s")
+
+    if how == "small":
+        data = data[data["date"] >= (datetime.now() - timedelta(days=2))]
+        print(data.shape)
 
     # time Format
     delta_time = data["date"].iloc[-1] - data["date"].iloc[0]
@@ -228,13 +234,13 @@ def make_a_plot_totals(df_inv, data, file_name, what):
     ax[2].xaxis.set_major_formatter(myFmt)
 
     change_all = mre.percent_change(
-        data["total_all"][0], data["total_all"][len(data) - 1]
+        data["total_all"].iloc[0], data["total_all"].iloc[-1]
     )
     change_crypto = mre.percent_change(
-        data["total_crypto"][0], data["total_crypto"][len(data) - 1]
+        data["total_crypto"].iloc[0], data["total_crypto"].iloc[-1]
     )
     change_fiat = mre.percent_change(
-        data["total_fiat"][0], data["total_fiat"][len(data) - 1]
+        data["total_fiat"].iloc[0], data["total_fiat"].iloc[-1]
     )
 
     if what == "usd":
@@ -256,37 +262,40 @@ def make_a_plot_totals(df_inv, data, file_name, what):
 
     ax[0].set_ylabel(f"Total All Investments [{what}]", size=10)
     ax[0].plot(data["date"], data["total_all"], label=change_all, color="black")
-    ax[0].plot(
-        [data["date"].iloc[0], data["date"].iloc[-1]],
-        [ini_val_all, ini_val_all],
-        "--",
-        label="Initial",
-        color="black",
-    )
+    if how == "big":
+        ax[0].plot(
+            [data["date"].iloc[0], data["date"].iloc[-1]],
+            [ini_val_all, ini_val_all],
+            "--",
+            label="Initial",
+            color="black",
+        )
     my_color = "red" if change_all[0] == "-" else "green"
     ax[0].legend(prop={"size": 10}).texts[0].set_color(my_color)
 
     ax[1].set_ylabel(f"Total Crypto Investments [{what}]", size=10)
     ax[1].plot(data["date"], data["total_crypto"], label=change_crypto, color="red")
-    ax[1].plot(
-        [data["date"].iloc[0], data["date"].iloc[-1]],
-        [ini_val_cry, ini_val_cry],
-        "--",
-        label="Initial",
-        color="red",
-    )
+    if how == "big":
+        ax[1].plot(
+            [data["date"].iloc[0], data["date"].iloc[-1]],
+            [ini_val_cry, ini_val_cry],
+            "--",
+            label="Initial",
+            color="red",
+        )
     my_color = "red" if change_crypto[0] == "-" else "green"
     ax[1].legend(prop={"size": 10}).texts[0].set_color(my_color)
 
     ax[2].set_ylabel(f"Total Fiat Investments [{what}]", size=10)
     ax[2].plot(data["date"], data["total_fiat"], label=change_fiat, color="blue")
-    ax[2].plot(
-        [data["date"].iloc[0], data["date"].iloc[-1]],
-        [ini_val_fia, ini_val_fia],
-        "--",
-        label="Initial",
-        color="blue",
-    )
+    if how == "big":
+        ax[2].plot(
+            [data["date"].iloc[0], data["date"].iloc[-1]],
+            [ini_val_fia, ini_val_fia],
+            "--",
+            label="Initial",
+            color="blue",
+        )
     my_color = "red" if change_fiat[0] == "-" else "green"
     ax[2].legend(prop={"size": 10}).texts[0].set_color(my_color)
     ax[2].set_xlabel("Time", size=10)
