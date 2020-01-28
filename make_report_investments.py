@@ -189,20 +189,81 @@ def main(args):
     totals_btc = totals_btc[["time_re", "total_all", "total_fiat", "total_crypto"]]
 
     # totals_usd.plot('time_re', 'total_all')
-    print(totals_usd.tail())
-    print(totals_btc.tail())
+    #print(totals_usd.tail())
+    #print(totals_btc.tail())
     df_inv.to_csv("out_investments_report.csv")
 
     print_report_totals(df_inv, totals_usd, totals_btc)
 
 
 def print_report_totals(df_inv, totals_usd, totals_btc):
-
+    #write html
     make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_small", "usd", "small")
     make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_big", "usd", "big")
     make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC_small", "btc", "small")
     make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC_big", "btc", "big")
+    
+    report_file = open("report_totals.html", "w")
+    
+    #initial links
+    text = '<a href="#usd_short">[Totals USD 24hs]</a>'
+    report_file.write(text + "\n")
+    text = '<a href="#usd_long">[Totals USD all]</a>'
+    report_file.write(text + "\n")
+    text = '<a href="#btc_short">[Totals BTC 24hs]</a>'
+    report_file.write(text + "\n")
+    text = '<a href="#btc_long">[Totals BTC all]</a>'
+    report_file.write(text + "\n")
 
+
+    text = df_inv.to_html()
+    report_file.write(text)
+    
+    text = '<p></p>\n<p></p>\n<p></p>\n'
+    report_file.write(text)
+    
+    
+    text = '<a name="usd_short"></a>'
+    report_file.write(text + "\n")
+    
+    text = '<p><font size="6" color="black"> Totals in USD 24hs</font></p>'
+    report_file.write(text + "\n")
+
+    text = '<figure> <img src = "./img/Totals_in_USD_small.jpg"> </figure>'
+    report_file.write(text + "\n\n")
+    
+    text = '<a name="usd_long"></a>'
+    report_file.write(text + "\n")
+    
+    text = '<p><font size="6" color="black"> Totals in USD all</font></p>'
+    report_file.write(text + "\n")
+    
+    text = '<figure> <img src = "./img/Totals_in_USD_big.jpg"> </figure>'
+    report_file.write(text + "\n\n")
+
+    
+    text = '<p></p>\n<p></p>\n<p></p>\n'
+    report_file.write(text)
+    
+    
+    text = '<a name="btc_short"></a>'
+    report_file.write(text + "\n")
+    
+    text = '<p><font size="6" color="black"> Totals in BTC 24hs</font></p>'
+    report_file.write(text + "\n")
+    
+    text = '<figure> <img src = "./img/Totals_in_BTC_small.jpg"> </figure>'
+    report_file.write(text + "\n\n")
+    
+    text = '<a name="btc_long"></a>'
+    report_file.write(text + "\n")
+    
+    text = '<p><font size="6" color="black"> Totals in BTC all</font></p>'
+    report_file.write(text + "\n")
+    
+    text = '<figure> <img src = "./img/Totals_in_BTC_big.jpg"> </figure>'
+    report_file.write(text + "\n\n")
+    
 
 def make_a_plot_totals(df_inv, data, file_name, what, how):
 
@@ -217,7 +278,7 @@ def make_a_plot_totals(df_inv, data, file_name, what, how):
 
     if how == "small":
         data = data[data["date"] >= (datetime.now() - timedelta(days=2))]
-        print(data.shape)
+        #print(data.shape)
 
     # time Format
     delta_time = data["date"].iloc[-1] - data["date"].iloc[0]
