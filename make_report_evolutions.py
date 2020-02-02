@@ -2,7 +2,9 @@ import mysql.connector
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
+from dateutil import tz
 import matplotlib.ticker as mtick
+import matplotlib.dates as mdates
 import sys
 
 
@@ -83,40 +85,60 @@ def make_a_plot_1(data, symbol, name):
     )
     ax = fig.subplots(nrows=4, ncols=1)
 
-    time = list(data["time_re"])
-    time = [(x - time[-1]) / 3600 for x in time]
+    # time = list(data["time_re"])
+    # time = [(x - time[-1]) / 3600 for x in time]
+
+    # new column with datetime values
+    data["date"] = pd.to_datetime(data["time_re"], unit="s")
+
+    # time Format
+    delta_time = data["date"].iloc[-1] - data["date"].iloc[0]
+
+    if delta_time.days <= 2:
+        myFmt = mdates.DateFormatter("%a-%H:%M")  # ('%d')
+    elif delta_time.days <= 30:
+        myFmt = mdates.DateFormatter("%d%b-%Hhs")  # ('%d')
+    else:
+        myFmt = mdates.DateFormatter("%Y%b%d")  # ('%d')
+
+    ax[0].xaxis.set_major_formatter(myFmt)
+    ax[1].xaxis.set_major_formatter(myFmt)
+    ax[2].xaxis.set_major_formatter(myFmt)
+    ax[3].xaxis.set_major_formatter(myFmt)
 
     title_str = name + ": " + str(data["price_usd"][len(data) - 1]) + " [usd]"
 
     change_usd = percent_change(data["price_usd"][0], data["price_usd"][len(data) - 1])
     change_btc = percent_change(data["price_btc"][0], data["price_btc"][len(data) - 1])
 
-    ax[0].set_ylabel("Price [usd]", size=8)
-    ax[0].set_xlabel("Time [hs]", size=8)
-    ax[0].plot(time, data["price_usd"], label=change_usd)
+    ax[0].set_ylabel("Price [usd]", size=10)
+    # ax[0].set_xlabel("Time", size=8)
+    # ax[0].plot(time, data["price_usd"], label=change_usd)
+    ax[0].plot(data["date"], data["price_usd"], label=change_usd)
     my_color = "red" if change_usd[0] == "-" else "green"
     ax[0].legend(prop={"size": 10}).texts[0].set_color(my_color)
 
-    ax[1].set_ylabel("Volume [usd]", size=8)
+    ax[1].set_ylabel("Volume [usd]", size=10)
     ax[1].ticklabel_format(style="sci", axis="y")
-    ax[1].set_xlabel("Time [hs]", size=8)
-    ax[1].plot(time, data["volume_usd"], color="red")
+    # ax[1].set_xlabel("Time", size=8)
+    ax[1].plot(data["date"], data["volume_usd"], color="red")
     ax[1].yaxis.set_major_formatter(mtick.FormatStrFormatter("%.1e"))
 
-    ax[2].set_ylabel("Price [btc]", size=8)
-    ax[2].set_xlabel("Time [hs]", size=8)
-    ax[2].plot(time, data["price_btc"], label=change_btc)
+    ax[2].set_ylabel("Price [btc]", size=10)
+    # ax[2].set_xlabel("Time", size=8)
+    ax[2].plot(data["date"], data["price_btc"], label=change_btc)
     ax[2].ticklabel_format(style="sci", axis="y")
     my_color = "red" if change_btc[0] == "-" else "green"
     ax[2].legend(prop={"size": 10}).texts[0].set_color(my_color)
 
-    ax[3].set_ylabel("Volume [btc]", size=8)
+    ax[3].set_ylabel("Volume [btc]", size=10)
     ax[3].ticklabel_format(style="sci", axis="y")
-    ax[3].set_xlabel("Time [hs]", size=8)
-    ax[3].plot(time, data["volume_btc"], color="red")
+    ax[3].set_xlabel("Time", size=10)
+    ax[3].plot(data["date"], data["volume_btc"], color="red")
     ax[3].yaxis.set_major_formatter(mtick.FormatStrFormatter("%.1e"))
 
     plt.savefig("./img/" + symbol + ".jpg", dpi=100, bbox_inches="tight")
+
     plt.close()
 
 
@@ -147,10 +169,10 @@ def main(args):
 
     for i in range(list_of_coins.shape[0]):
 
-        print(i, " -> ")
-        print("\t id: ", list_of_coins["id"][i])
-        print("\t Symbol: ", list_of_coins["symbol"][i].upper())
-        print("\t Name: ", list_of_coins["name"][i])
+        print(i, " -> ", flush=True)
+        print("\t id: ", list_of_coins["id"][i], flush=True)
+        print("\t Symbol: ", list_of_coins["symbol"][i].upper(), flush=True)
+        print("\t Name: ", list_of_coins["name"][i], flush=True)
 
         try:
             data = read_crypto_data(list_of_coins["symbol"][i].upper(), time_period)
@@ -216,10 +238,23 @@ def main(args):
     report_file.close()
 
     print(
-        "\nLast database actualization: ",
+        "\nLast database actualization (UTC): ",
         datetime.utcfromtimestamp(data["time_re"].iloc[-1]).strftime(
             "%Y-%m-%d %H:%M:%S"
         ),
+        flush=True,
+    )
+
+    from_zone = tz.tzutc()
+    to_zone = tz.tzlocal()
+
+    utc = datetime.utcfromtimestamp(data["time_re"].iloc[-1])
+    utc = utc.replace(tzinfo=from_zone)
+
+    my_zone = utc.astimezone(to_zone)
+
+    print(
+        "Last database actualization (Berlin): ", my_zone.strftime("%Y-%m-%d %H:%M:%S"),
     )
 
 
