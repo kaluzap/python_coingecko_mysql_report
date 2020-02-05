@@ -198,8 +198,6 @@ def main(args):
 
 def print_report_totals(df_inv, totals_usd, totals_btc):
     #write html
-   
-    #create figures
     make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_small", "usd", "small")
     make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_big", "usd", "big")
     make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC_small", "btc", "small")
