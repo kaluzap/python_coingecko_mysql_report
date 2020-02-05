@@ -70,7 +70,22 @@ def main(args):
     totals_btc = mre.read_crypto_data("BTC", seconds_in_the_past)[["time_re"]]
     totals_usd = mre.read_crypto_data("BTC", seconds_in_the_past)[["time_re"]]
 
-    # creatin list with mean values
+    #adding the neede columns with zeros.
+    totals_btc['total_all'] = 0.0
+    totals_btc['total_fiat'] = 0.0
+    totals_btc['total_crypto'] = 0.0
+    totals_btc['inv_all'] = 0.0
+    totals_btc['inv_fiat'] = 0.0
+    totals_btc['inv_crypto'] = 0.0
+    totals_usd['total_all'] = 0.0
+    totals_usd['total_fiat'] = 0.0
+    totals_usd['total_crypto'] = 0.0
+    totals_usd['inv_all'] = 0.0
+    totals_usd['inv_fiat'] = 0.0
+    totals_usd['inv_crypto'] = 0.0
+    #col_names_totals = ['total_all', 'total_fiat', 'total_crypto', 'inv_all', 'inv_fiat', 'inv_crypto']
+    
+    # creatin list with mean values for inversion dataframe
     active_investments = []
     actual_value_usd = []
     actual_value_btc = []
@@ -119,18 +134,34 @@ def main(args):
             right_on="time_re",
             how="left",
         )
-
-        colnames = [x.replace(" ", "") for x in totals_btc.columns]
-        new_col_name = row["coin"].replace(" ", "") + f"{index}"
-        colnames = colnames[:-1] + [new_col_name]
-        totals_btc.columns = colnames
-        totals_usd.columns = colnames
-
+        
+        #We need to know when the invesment is actived in order to add the initial amount
+        totals_usd['when_active'] = totals_usd['value_usd'].apply(lambda x: 0 if np.isnan(x) else 1.0)
+        totals_btc['when_active'] = totals_btc['value_btc'].apply(lambda x: 0 if np.isnan(x) else 1.0)
+        
+        totals_usd = totals_usd.fillna(0.0)
+        totals_btc = totals_btc.fillna(0.0)
+        
+        totals_usd['total_all'] = totals_usd['total_all'] + totals_usd['value_usd']
+        totals_usd['inv_all'] = totals_usd['inv_all'] + totals_usd['when_active']*row['start_value_usd']
+        totals_btc['total_all'] = totals_btc['total_all'] + totals_btc['value_btc']
+        totals_btc['inv_all'] = totals_btc['inv_all'] + totals_btc['when_active']*row['start_value_btc']
+        
         if row["type"] == "fiat":
-            col_names_fiat.append(new_col_name)
+            totals_usd['total_fiat'] = totals_usd['total_fiat'] + totals_usd['value_usd']
+            totals_usd['inv_fiat'] = totals_usd['inv_fiat'] + totals_usd['when_active']*row['start_value_usd']
+            totals_btc['total_fiat'] = totals_btc['total_fiat'] + totals_btc['value_btc']
+            totals_btc['inv_fiat'] = totals_btc['inv_fiat'] + totals_btc['when_active']*row['start_value_btc']
         elif row["type"] == "crypto":
-            col_names_crypto.append(new_col_name)
+            totals_usd['total_crypto'] = totals_usd['total_crypto'] + totals_usd['value_usd']
+            totals_usd['inv_crypto'] = totals_usd['inv_crypto'] + totals_usd['when_active']*row['start_value_usd']
+            totals_btc['total_crypto'] = totals_btc['total_crypto'] + totals_btc['value_btc']
+            totals_btc['inv_crypto'] = totals_btc['inv_crypto'] + totals_btc['when_active']*row['start_value_btc']
+            
 
+        totals_usd.drop(columns=['value_usd', 'when_active'], inplace=True)
+        totals_btc.drop(columns=['value_btc', 'when_active'], inplace=True)
+        
         # print only if we want active investments
         if (args.status == "active") and (is_active == False):
             continue
@@ -173,24 +204,6 @@ def main(args):
     df_inv["change_usd"] = change_usd
     df_inv["change_btc"] = change_btc
 
-    totals_usd = totals_usd.fillna(0.0)
-    totals_btc = totals_btc.fillna(0.0)
-
-    colnames = [x for x in totals_btc.columns][1:]
-
-    totals_usd["total_all"] = totals_usd[colnames].sum(axis=1)
-    totals_usd["total_fiat"] = totals_usd[col_names_fiat].sum(axis=1)
-    totals_usd["total_crypto"] = totals_usd[col_names_crypto].sum(axis=1)
-    totals_usd = totals_usd[["time_re", "total_all", "total_fiat", "total_crypto"]]
-
-    totals_btc["total_all"] = totals_btc[colnames].sum(axis=1)
-    totals_btc["total_fiat"] = totals_btc[col_names_fiat].sum(axis=1)
-    totals_btc["total_crypto"] = totals_btc[col_names_crypto].sum(axis=1)
-    totals_btc = totals_btc[["time_re", "total_all", "total_fiat", "total_crypto"]]
-
-    # totals_usd.plot('time_re', 'total_all')
-    #print(totals_usd.tail())
-    #print(totals_btc.tail())
     df_inv.to_csv("out_investments_report.csv")
 
     print_report_totals(df_inv, totals_usd, totals_btc)
@@ -198,12 +211,11 @@ def main(args):
 
 def print_report_totals(df_inv, totals_usd, totals_btc):
     #write html
-   
-    #create figures
-    make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_small", "usd", "small")
-    make_a_plot_totals(df_inv, totals_usd, "Totals_in_USD_big", "usd", "big")
-    make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC_small", "btc", "small")
-    make_a_plot_totals(df_inv, totals_btc, "Totals_in_BTC_big", "btc", "big")
+
+    make_a_plot_totals(totals_usd, "Totals_in_USD_small", "usd", "small")
+    make_a_plot_totals(totals_usd, "Totals_in_USD_big", "usd", "big")
+    make_a_plot_totals(totals_btc, "Totals_in_BTC_small", "btc", "small")
+    make_a_plot_totals(totals_btc, "Totals_in_BTC_big", "btc", "big")
     
     report_file = open("report_totals.html", "w")
     
@@ -267,8 +279,8 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     report_file.write(text + "\n\n")
     
 
-def make_a_plot_totals(df_inv, data, file_name, what, how):
-
+def make_a_plot_totals(data, file_name, what, how):
+    
     fig = plt.figure(figsize=(13, 10))  # tight_layout=True)#figsize=(600,300))
     plt.subplots_adjust(
         left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.35
@@ -280,7 +292,6 @@ def make_a_plot_totals(df_inv, data, file_name, what, how):
 
     if how == "small":
         data = data[data["date"] >= (datetime.now() - timedelta(days=2))]
-        #print(data.shape)
 
     # time Format
     delta_time = data["date"].iloc[-1] - data["date"].iloc[0]
@@ -305,60 +316,25 @@ def make_a_plot_totals(df_inv, data, file_name, what, how):
     change_fiat = mre.percent_change(
         data["total_fiat"].iloc[0], data["total_fiat"].iloc[-1]
     )
-
-    if what == "usd":
-        ini_val_all = df_inv[df_inv["active"] == True]["start_value_usd"].sum()
-        ini_val_cry = df_inv[(df_inv["active"] == True) & (df_inv["type"] == "crypto")][
-            "start_value_usd"
-        ].sum()
-        ini_val_fia = df_inv[(df_inv["active"] == True) & (df_inv["type"] == "fiat")][
-            "start_value_usd"
-        ].sum()
-    else:
-        ini_val_all = df_inv[df_inv["active"] == True]["start_value_btc"].sum()
-        ini_val_cry = df_inv[(df_inv["active"] == True) & (df_inv["type"] == "crypto")][
-            "start_value_btc"
-        ].sum()
-        ini_val_fia = df_inv[(df_inv["active"] == True) & (df_inv["type"] == "fiat")][
-            "start_value_btc"
-        ].sum()
-
+    
     ax[0].set_ylabel(f"Total All Investments [{what}]", size=10)
     ax[0].plot(data["date"], data["total_all"], label=change_all, color="black")
     if how == "big":
-        ax[0].plot(
-            [data["date"].iloc[0], data["date"].iloc[-1]],
-            [ini_val_all, ini_val_all],
-            "--",
-            label="Initial",
-            color="black",
-        )
+        ax[0].plot(data["date"], data['inv_all'], "--", label="Initial", color="black")
     my_color = "red" if change_all[0] == "-" else "green"
     ax[0].legend(prop={"size": 10}).texts[0].set_color(my_color)
 
     ax[1].set_ylabel(f"Total Crypto Investments [{what}]", size=10)
     ax[1].plot(data["date"], data["total_crypto"], label=change_crypto, color="red")
     if how == "big":
-        ax[1].plot(
-            [data["date"].iloc[0], data["date"].iloc[-1]],
-            [ini_val_cry, ini_val_cry],
-            "--",
-            label="Initial",
-            color="red",
-        )
+        ax[1].plot(data["date"], data['inv_crypto'], "--", label="Initial", color="black")
     my_color = "red" if change_crypto[0] == "-" else "green"
     ax[1].legend(prop={"size": 10}).texts[0].set_color(my_color)
 
     ax[2].set_ylabel(f"Total Fiat Investments [{what}]", size=10)
     ax[2].plot(data["date"], data["total_fiat"], label=change_fiat, color="blue")
     if how == "big":
-        ax[2].plot(
-            [data["date"].iloc[0], data["date"].iloc[-1]],
-            [ini_val_fia, ini_val_fia],
-            "--",
-            label="Initial",
-            color="blue",
-        )
+        ax[2].plot(data["date"], data['inv_fiat'], "--", label="Initial", color="black")
     my_color = "red" if change_fiat[0] == "-" else "green"
     ax[2].legend(prop={"size": 10}).texts[0].set_color(my_color)
     ax[2].set_xlabel("Time", size=10)
