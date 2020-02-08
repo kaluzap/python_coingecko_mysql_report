@@ -1,68 +1,82 @@
 import mysql.connector
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import tz
-
 import matplotlib.pyplot as plt
 
-
-databases = {
-    "rp3": {
-        "user": "pablo",
-        "password": "12345678",
-        "host": "192.168.0.13",
-        "port": "3306",
-        "database": "cryptos",
-    },
-    "grande": {
-        "user": "pablo",
-        "password": "12345678",
-        "host": "127.0.0.1",
-        "port": "3306",
-        "database": "cryptos",
-    },
-}
+import config
 
 
-def read_crypto_data(symbol, past_hours=48):
+def start_mysql_connection(in_database):
+    """starting mysql with the info of the dictionary in_database"""
+    try:
+        cnx = mysql.connector.connect(
+            user=in_database["user"],
+            password=in_database["password"],
+            host=in_database["host"],
+            port=in_database["port"],
+            database=in_database["database"],
+        )
+    except Exception as e:
+        print(f"Error in start_mysql_connection()")
+        print(f'Message: "{e}"')
+    return cnx
 
-    columns_names = [
-        "time_re",
-        "price_usd",
-        "volume_usd",
-        "price_btc",
-        "volume_btc",
-        "time_lu",
-    ]
 
-    df_results = pd.DataFrame(columns=columns_names)
+def create_table(cursor, cnx, simbol):
+    command = "CREATE TABLE " + simbol.upper() + ' '
+    command += "(time_re INT, price_usd DOUBLE, volume_usd DOUBLE, price_btc DOUBLE, volume_btc DOUBLE, time_lu INT, PRIMARY KEY (time_re));"
+    try:
+        cursor.execute(command)
+        cnx.commit()
+    except:
+        return False
+    return True
 
-    for db in list(databases.keys()):
 
+def write_a_line(cursor, cnx, symbol, data):
+    """data is a dict with keys as COLUMNS_NAMES"""
+    command = "INSERT INTO " + symbol + " (time_re, price_usd, volume_usd, price_btc, volume_btc, time_lu) VALUES ("
+    command += "\"" + str(round(data['time_re'], 0)) + "\", "
+    command += "\"" + str(data['price_usd']) + "\", "
+    command += "\"" + str(data['volume_usd']) + "\", "
+    command += "\"" + str(data['price_btc']) + "\", "
+    command += "\"" + str(data['volume_btc']) + "\", "
+    command += "\"" + str(round(data['time_lu'], 0)) + "\");"
+    try:
+        cursor.execute(command)
+        cnx.commit()
+    except:
+        print("Error: some problems adding data for ", symbol)
+        return False
+    return True
+    
+    
+def read_crypto_data(symbol, initial_date, final_date=None):
+    """initial_date and final_date are datetime objects
+    If final_date is ignored, the actual time is considered."""
+
+    # empty dataframe with the requered columns
+    df_results = pd.DataFrame(columns=config.COLUMN_NAMES)
+
+    # looping over the databases
+    for db in list(config.DATABASES.keys()):
         try:
-            cnx = mysql.connector.connect(
-                user=databases[db]["user"],
-                password=databases[db]["password"],
-                host=databases[db]["host"],
-                port=databases[db]["port"],
-                database=databases[db]["database"],
-            )
+            cnx = start_mysql_connection(config.DATABASES[db])
+            cursor = cnx.cursor(buffered=True)
         except:
             continue
-
-        cursor = cnx.cursor(buffered=True)
 
         if cnx.is_connected() == False:
             continue
 
-        date_time_obj = datetime.now()
-        time_linux_now = date_time_obj.timestamp()
-        time_start = time_linux_now - past_hours * 3600
+        stamp_ini = initial_date.timestamp()
+        if final_date is None:
+            stamp_fin = datetime.now().timestamp()
+        else:
+            stamp_fin = final_date.timestamp()
 
-        command = (
-            "SELECT * FROM " + symbol + " WHERE time_re > " + str(time_start) + ";"
-        )
-
+        command = f"SELECT * FROM {symbol} WHERE time_re >= {stamp_ini} AND time_re <= {stamp_fin};"
         try:
             cursor.execute(command)
             results = cursor.fetchall()
@@ -76,7 +90,7 @@ def read_crypto_data(symbol, past_hours=48):
         if df_temp.shape[0] == 0:  # there are any row
             continue
 
-        df_temp.columns = columns_names
+        df_temp.columns = config.COLUMN_NAMES
         df_results = pd.concat([df_results, df_temp], ignore_index=True)
 
     df_results = df_results.drop_duplicates(subset="time_re", keep="last")
@@ -88,9 +102,10 @@ def read_crypto_data(symbol, past_hours=48):
 
 if __name__ == "__main__":
 
-    df = read_crypto_data("LTC", 400008)
+    df = read_crypto_data(
+        "BTC", datetime.now() - timedelta(days=700), datetime.now()
+    )
+    df['date'] = pd.to_datetime(df['time_re'],unit='s')
+    plt.plot(df["date"], df["price_usd"], "red")
 
-    print(df.head())
-
-    plt.plot(df["time_re"], df["price_usd"])
     plt.show()
