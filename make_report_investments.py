@@ -7,7 +7,7 @@ import matplotlib.ticker as mtick
 import matplotlib.dates as mdates
 
 import make_report_evolutions as mre
-
+import utils.handle_db as hdb
 
 def read_investments_file(name):
 
@@ -33,14 +33,8 @@ def read_investments_file(name):
 
 
 def load_usd_btc_prices_for_one_investment(coin, date_start, date_end):
-
-    seconds_in_the_past = (datetime.now() - date_start).total_seconds()
-
-    df_temp = mre.read_crypto_data(coin, seconds_in_the_past)[
-        ["time_re", "price_usd", "price_btc"]
-    ]
-
-    return df_temp[df_temp["time_re"] <= date_end.timestamp()]
+    df_temp = hdb.read_crypto_data(coin, date_start, date_end) 
+    return df_temp[["time_re", "price_usd", "price_btc"]]
 
 
 def load_one_investment(df_investments):
@@ -65,10 +59,10 @@ def main(args):
     # loading investments
     df_inv = read_investments_file(args.investments)
 
-    # crating totals dataframes
-    seconds_in_the_past = (datetime.now() - df_inv["start_date"].min()).total_seconds()
-    totals_btc = mre.read_crypto_data("BTC", seconds_in_the_past)[["time_re"]]
-    totals_usd = mre.read_crypto_data("BTC", seconds_in_the_past)[["time_re"]]
+    # creating totals dataframes
+    totals_btc = hdb.read_crypto_data("BTC", df_inv["start_date"].min())[["time_re"]]
+    totals_usd = hdb.read_crypto_data("BTC", df_inv["start_date"].min())[["time_re"]]
+
 
     #adding the neede columns with zeros.
     totals_btc['total_all'] = 0.0

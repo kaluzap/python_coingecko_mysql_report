@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from dateutil import tz
 import matplotlib.pyplot as plt
 
+import sys
+sys.path.append("./utils")
 import config
 
 
@@ -97,13 +99,19 @@ def read_crypto_data(symbol, initial_date, final_date=None):
     df_results = df_results.sort_values(["time_re"])
     df_results = df_results.reset_index()
 
+    df_results['time_re'] = df_results['time_re'].astype('int64')
+    df_results["price_usd"] = df_results["price_usd"].astype('float64')
+    df_results["price_btc"] = df_results["price_btc"].astype('float64')
+    df_results["volume_usd"] = df_results["volume_usd"].astype('float64')
+    df_results["volume_btc"] = df_results["volume_btc"].astype('float64')
+    
     return df_results
 
 
 if __name__ == "__main__":
 
     df = read_crypto_data(
-        "BTC", datetime.now() - timedelta(days=700), datetime.now()
+        "LTC", datetime.now() - timedelta(days=700), datetime.now()
     )
     df['date'] = pd.to_datetime(df['time_re'],unit='s')
     plt.plot(df["date"], df["price_usd"], "red")
