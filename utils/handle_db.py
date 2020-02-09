@@ -54,7 +54,7 @@ def write_a_line(cursor, cnx, symbol, data):
     return True
     
     
-def read_crypto_data(symbol, initial_date, final_date=None):
+def read_crypto_data(symbol, initial_date, final_date = None):
     """initial_date and final_date are datetime objects
     If final_date is ignored, the actual time is considered."""
 
@@ -62,7 +62,7 @@ def read_crypto_data(symbol, initial_date, final_date=None):
     df_results = pd.DataFrame(columns=config.COLUMN_NAMES)
 
     # looping over the databases
-    for db in list(config.DATABASES.keys()):
+    for db in config.ACTIVE_DATABASES:
         try:
             cnx = start_mysql_connection(config.DATABASES[db])
             cursor = cnx.cursor(buffered=True)

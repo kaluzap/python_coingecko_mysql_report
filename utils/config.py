@@ -22,6 +22,8 @@ DATABASES = {
     },
 }
 
+ACTIVE_DATABASES =  list(DATABASES.keys())
+
 COLUMN_NAMES = [
     "time_re",
     "price_usd",
