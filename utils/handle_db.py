@@ -110,9 +110,24 @@ def read_crypto_data(symbol, initial_date, final_date=None):
 
 if __name__ == "__main__":
 
-    df = read_crypto_data(
-        "LTC", datetime.now() - timedelta(days=700), datetime.now()
+    import argparse
+
+    # Adding command line options
+    parser = argparse.ArgumentParser(
+        description="Handle DB V 1.0 (2020-02-08)",
+        epilog="Example: python3 handle_db.py --coin BTC",
     )
+
+    parser.add_argument(
+        "--coin", "-c", required=True, help="specify the coin."
+    )
+    
+    args = parser.parse_args()
+    
+    df = read_crypto_data(
+        args.coin, datetime.now() - timedelta(days=700), datetime.now()
+    )
+    
     df['date'] = pd.to_datetime(df['time_re'],unit='s')
     plt.plot(df["date"], df["price_usd"], "red")
 

@@ -13,8 +13,6 @@ DATABASES = {
         "port": "3306",
         "database": "cryptos",
     },
-}
-"""
     "old_data": {
         "user": "pablo",
         "password": "12345678",
@@ -23,7 +21,7 @@ DATABASES = {
         "database": "old_data",
     },
 }
-"""
+
 COLUMN_NAMES = [
     "time_re",
     "price_usd",
