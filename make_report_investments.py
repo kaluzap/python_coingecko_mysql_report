@@ -57,10 +57,18 @@ def load_one_investment(df_investments):
 
 
 def main(args):
-
+    
+    #creating report files
+    report_file_fiat_active = open("./reports/report_fiat_active.html", "w")
+    report_file_fiat_inactive = open("./reports/report_fiat_inactive.html", "w")
+    report_file_crypto_active = open("./reports/report_crypto_active.html", "w")
+    report_file_crypto_inactive = open("./reports/report_crypto_inactive.html", "w")
+    
+    
     # loading investments
     df_inv = read_investments_file(args.investments)
 
+    
     # creating totals dataframes
     totals_btc = hdb.read_crypto_data(
         symbol="BTC", initial_date=df_inv["start_date"].min()
@@ -207,7 +215,7 @@ def main(args):
                 pass
             else:
                 pass
-        
+        report_file = open("./reports/report_totals.html", "w")
         
         print(f"Investment {index+1}")
         print("Coin: ", row["coin"])
@@ -247,6 +255,26 @@ def main(args):
     df_inv.to_csv("out_investments_report.csv")
 
     print_report_totals(df_inv, totals_usd, totals_btc)
+    
+    
+    #printing tables
+    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html()
+    report_file_fiat_active.write(text)
+    
+    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html()
+    report_file_fiat_inactive.write(text)
+    
+    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html()
+    report_file_crypto_active.write(text)
+    
+    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html()
+    report_file_crypto_inactive.write(text)
+    
+    report_file_fiat_active.close()
+    report_file_fiat_inactive.close()
+    report_file_crypto_active.close()
+    report_file_crypto_inactive.close()
+    
 
 
 def print_report_totals(df_inv, totals_usd, totals_btc):
@@ -271,8 +299,8 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = '<a href="#btc_long">[Totals BTC all]</a>'
     report_file.write(text + "\n")
 
-    text = df_inv.to_html()
-    report_file.write(text)
+    #text = df_inv.to_html()
+    #report_file.write(text)
 
     text = "<p></p>\n<p></p>\n<p></p>\n"
     report_file.write(text)
@@ -345,6 +373,8 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
 
     text = '<figure> <img src = "./img/Totals_in_BTC_big.jpg"> </figure>'
     report_file.write(text + "\n\n")
+    
+    report_file.close()
 
 
 def make_a_plot_totals(data, file_name, what, how):
