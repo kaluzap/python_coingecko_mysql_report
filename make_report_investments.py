@@ -111,27 +111,27 @@ def main(args):
             final_value_btc = row["end_value_btc"]
             actual_value_usd.append(final_value_usd)
             actual_value_btc.append(final_value_btc)
-
-        change_usd_here = (
-            100.0 * (final_value_usd - row["start_value_usd"]) / row["start_value_usd"]
-        )
-        change_btc_here = (
-            100.0 * (final_value_btc - row["start_value_btc"]) / row["start_value_btc"]
-        )
+        
+        change_usd_here = tools.float_change_percentage(row["start_value_usd"], final_value_usd)        
+        change_btc_here = tools.float_change_percentage(row["start_value_btc"], final_value_btc)
         change_btc.append(change_btc_here)
         change_usd.append(change_usd_here)
 
-        totals_usd = totals_usd.merge(
+        totals_usd = pd.merge_asof(
+            totals_usd,
             df_temp[["time_re", "value_usd"]],
             left_on="time_re",
             right_on="time_re",
-            how="left",
+            tolerance=3600,
+            direction="nearest",
         )
-        totals_btc = totals_btc.merge(
+        totals_btc = pd.merge_asof(
+            totals_btc,
             df_temp[["time_re", "value_btc"]],
             left_on="time_re",
             right_on="time_re",
-            how="left",
+            tolerance=3600,
+            direction="nearest",
         )
 
         # We need to know when the invesment is actived in order to add the initial amount
@@ -194,7 +194,21 @@ def main(args):
 
         if (args.status == "inactive") and (is_active == True):
             continue
-
+        
+        
+        #Create figures and report for the investments
+        if is_active:
+            if row['type'] == 'fiat':
+                pass
+            else:
+                pass
+        else:
+            if row['type'] == 'fiat':
+                pass
+            else:
+                pass
+        
+        
         print(f"Investment {index+1}")
         print("Coin: ", row["coin"])
         print("Investment type: ", row["type"])
@@ -238,13 +252,13 @@ def main(args):
 def print_report_totals(df_inv, totals_usd, totals_btc):
     # write html
 
-    #creating figures
+    # creating figures
     make_a_plot_totals(totals_usd, "Totals_in_USD_small", "usd", "small")
     make_a_plot_totals(totals_usd, "Totals_in_USD_big", "usd", "big")
     make_a_plot_totals(totals_btc, "Totals_in_BTC_small", "btc", "small")
     make_a_plot_totals(totals_btc, "Totals_in_BTC_big", "btc", "big")
 
-    #file with the output
+    # file with the output
     report_file = open("./reports/report_totals.html", "w")
 
     # initial links
@@ -257,17 +271,33 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = '<a href="#btc_long">[Totals BTC all]</a>'
     report_file.write(text + "\n")
 
-    #text = df_inv.to_html()
-    #report_file.write(text)
+    text = df_inv.to_html()
+    report_file.write(text)
 
     text = "<p></p>\n<p></p>\n<p></p>\n"
     report_file.write(text)
 
     text = '<a name="usd_short"></a>'
     report_file.write(text + "\n")
-
+    
+    
+    #report usd volutions short
     text = '<p><font size="6" color="black"> Totals in USD 24hs</font></p>'
     report_file.write(text + "\n")
+    
+    aaa = round(df_inv[df_inv['active']==True]['actual_value_usd'].sum(), 2)
+    text = f'<p><font size="4" color="black"> Total All in USD: {aaa}</font></p>'
+    report_file.write(text + "\n")
+    
+    aaa = round(df_inv[ (df_inv['type']=='crypto') & (df_inv['active']==True)]['actual_value_usd'].sum(), 2)
+    text = f'<p><font size="4" color="black"> Total Crypto in USD: {aaa}</font></p>'
+    report_file.write(text + "\n")    
+    
+    aaa = round(df_inv[ (df_inv['type']=='fiat') & (df_inv['active']==True)]['actual_value_usd'].sum(), 2)
+    text = f'<p><font size="4" color="black"> Total Fiat in USD: {aaa}</font></p>'
+    report_file.write(text + "\n") 
+    
+    
 
     text = '<figure> <img src = "./img/Totals_in_USD_small.jpg"> </figure>'
     report_file.write(text + "\n\n")
@@ -289,6 +319,20 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
 
     text = '<p><font size="6" color="black"> Totals in BTC 24hs</font></p>'
     report_file.write(text + "\n")
+    
+    aaa = round(df_inv[df_inv['active']==True]['actual_value_btc'].sum(), 5)
+    text = f'<p><font size="4" color="black"> Total All in BTC: {aaa}</font></p>'
+    report_file.write(text + "\n")
+    
+    aaa = round(df_inv[ (df_inv['type']=='crypto') & (df_inv['active']==True)]['actual_value_btc'].sum(), 5)
+    text = f'<p><font size="4" color="black"> Total Crypto in BTC: {aaa}</font></p>'
+    report_file.write(text + "\n")    
+    
+    aaa = round(df_inv[ (df_inv['type']=='fiat') & (df_inv['active']==True)]['actual_value_btc'].sum(), 5)
+    text = f'<p><font size="4" color="black"> Total Fiat in BTC: {aaa}</font></p>'
+    report_file.write(text + "\n") 
+    
+    
 
     text = '<figure> <img src = "./img/Totals_in_BTC_small.jpg"> </figure>'
     report_file.write(text + "\n\n")
@@ -330,40 +374,83 @@ def make_a_plot_totals(data, file_name, what, how):
     ax[0].xaxis.set_major_formatter(myFmt)
     ax[1].xaxis.set_major_formatter(myFmt)
     ax[2].xaxis.set_major_formatter(myFmt)
-    
-    
-    #changes
-    if how == 'small':
-        change_all = tools.str_change_percentage(data['total_all'].iloc[0], data['total_all'].iloc[-1])
-        change_crypto = tools.str_change_percentage(data['total_crypto'].iloc[0], data['total_crypto'].iloc[-1])
-        change_fiat = tools.str_change_percentage(data['total_fiat'].iloc[0], data['total_fiat'].iloc[-1])
+
+    # changes
+    if how == "small":
+        change_all = tools.str_change_percentage(
+            data["total_all"].iloc[0], data["total_all"].iloc[-1]
+        )
+        change_crypto = tools.str_change_percentage(
+            data["total_crypto"].iloc[0], data["total_crypto"].iloc[-1]
+        )
+        change_fiat = tools.str_change_percentage(
+            data["total_fiat"].iloc[0], data["total_fiat"].iloc[-1]
+        )
     else:
-        change_all = tools.str_change_percentage(data['inv_all'].iloc[-1], data['total_all'].iloc[-1])
-        change_crypto = tools.str_change_percentage(data['inv_crypto'].iloc[-1], data['total_crypto'].iloc[-1])
-        change_fiat = tools.str_change_percentage(data['inv_fiat'].iloc[-1], data['total_fiat'].iloc[-1])
-    
-    
-    #figures
+        change_all = tools.str_change_percentage(
+            data["inv_all"].iloc[-1], data["total_all"].iloc[-1]
+        )
+        change_crypto = tools.str_change_percentage(
+            data["inv_crypto"].iloc[-1], data["total_crypto"].iloc[-1]
+        )
+        change_fiat = tools.str_change_percentage(
+            data["inv_fiat"].iloc[-1], data["total_fiat"].iloc[-1]
+        )
+
+    # figures
     ax[0].set_ylabel(f"Total All Investments [{what}]", size=10)
     if how == "big":
-        ax[0].plot(data["date"], data["inv_all"], "--", label="Investment", color="black")
-    ax[0].plot(data["date"], data["total_all"], label= change_all, color="green")
+        ax[0].plot(
+            data["date"],
+            data["inv_all"],
+            "--",
+            label="Investment",
+            color="black",
+            linewidth=0.75,
+        )
+    ax[0].plot(
+        data["date"], data["total_all"], label=change_all, color="green", linewidth=0.75
+    )
     ax[0].legend(prop={"size": 10})
-    
+
     ax[1].set_ylabel(f"Total Crypto Investments [{what}]", size=10)
     if how == "big":
         ax[1].plot(
-            data["date"], data["inv_crypto"], "--", label="Investment", color="black"
+            data["date"],
+            data["inv_crypto"],
+            "--",
+            label="Investment",
+            color="black",
+            linewidth=0.75,
         )
-    ax[1].plot(data["date"], data["total_crypto"], label=change_crypto, color="red")
+    ax[1].plot(
+        data["date"],
+        data["total_crypto"],
+        label=change_crypto,
+        color="red",
+        linewidth=0.75,
+    )
     ax[1].legend(prop={"size": 10})
-    
+
     ax[2].set_ylabel(f"Total Fiat Investments [{what}]", size=10)
     if how == "big":
-        ax[2].plot(data["date"], data["inv_fiat"], "--", label="Investment", color="black")
-    ax[2].plot(data["date"], data["total_fiat"], label=change_fiat, color="blue")
+        ax[2].plot(
+            data["date"],
+            data["inv_fiat"],
+            "--",
+            label="Investment",
+            color="black",
+            linewidth=0.75,
+        )
+    ax[2].plot(
+        data["date"],
+        data["total_fiat"],
+        label=change_fiat,
+        color="blue",
+        linewidth=0.75,
+    )
     ax[2].legend(prop={"size": 10})
-    
+
     plt.savefig("./reports/img/" + file_name + ".jpg", dpi=100, bbox_inches="tight")
     plt.close()
 
