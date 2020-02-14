@@ -141,7 +141,7 @@ def main(args):
             tolerance=3600,
             direction="nearest",
         )
-
+        
         # We need to know when the invesment is actived in order to add the initial amount
         totals_usd["when_active"] = totals_usd["value_usd"].apply(
             lambda x: 0 if np.isnan(x) else 1.0
@@ -205,6 +205,8 @@ def main(args):
         
         
         #Create figures and report for the investments
+        create_fig_evo_investment(index, row, df_temp, is_active)
+        
         if is_active:
             if row['type'] == 'fiat':
                 pass
@@ -215,7 +217,7 @@ def main(args):
                 pass
             else:
                 pass
-        report_file = open("./reports/report_totals.html", "w")
+        #report_file = open("./reports/report_totals.html", "w")
         
         print(f"Investment {index+1}")
         print("Coin: ", row["coin"])
@@ -256,24 +258,112 @@ def main(args):
 
     print_report_totals(df_inv, totals_usd, totals_btc)
     
+    df_inv['link'] = df_inv.index.map(lambda x : f'<a href="#{x}">[link]</a>' )
     
     #printing tables
-    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html()
+    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html(escape=False)
     report_file_fiat_active.write(text)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)], report_file_fiat_active, "Aqui aqui")
     
-    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html()
+    
+    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html(escape=False)
     report_file_fiat_inactive.write(text)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)], report_file_fiat_inactive, "Aqui aqui")
     
-    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html()
+    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html(escape=False)
     report_file_crypto_active.write(text)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)], report_file_crypto_active, "Aqui aqui")
     
-    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html()
+    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html(escape=False)
     report_file_crypto_inactive.write(text)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)], report_file_crypto_inactive, "Aqui aqui")
     
     report_file_fiat_active.close()
     report_file_fiat_inactive.close()
     report_file_crypto_active.close()
     report_file_crypto_inactive.close()
+    
+
+def write_report_data_frame(data, file_output, label):
+    
+    for index, row in data.iterrows():
+        text = f'<a name="{index}"></a>'
+        file_output.write(text + "\n")
+        text = f'<figure> <img src = "./img/{index}.jpg"> </figure>'
+        file_output.write(text)
+
+
+def create_fig_evo_investment(index, row, data, is_active):
+    
+    fig = plt.figure(figsize=(13, 7))  # tight_layout=True)#figsize=(600,300))
+    plt.subplots_adjust(
+        left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.35
+    )
+    ax = fig.subplots(nrows=2, ncols=1)
+    
+    # new column with datetime values
+    data["date"] = pd.to_datetime(data["time_re"], unit="s")
+    
+    if data.shape[0] < 2:
+        return
+    
+    # time Format
+    delta_time = data["date"].iloc[-1] - data["date"].iloc[0]
+
+    if delta_time.days <= 2:
+        myFmt = mdates.DateFormatter("%a-%H:%M")  # ('%d')
+    elif delta_time.days <= 30:
+        myFmt = mdates.DateFormatter("%d%b-%Hhs")  # ('%d')
+    else:
+        myFmt = mdates.DateFormatter("%Y%b%d")  # ('%d')
+
+    ax[0].xaxis.set_major_formatter(myFmt)
+    ax[1].xaxis.set_major_formatter(myFmt)
+    
+    
+    # changes
+    if is_active:
+        change_btc = tools.str_change_percentage(
+            row["start_value_btc"], data["value_btc"].iloc[-1]
+        )
+        change_usd = tools.str_change_percentage(
+            row["start_value_usd"], data["value_usd"].iloc[-1]
+        )
+    else:
+        change_btc = tools.str_change_percentage(
+            row["start_value_btc"], row["end_value_btc"]
+        )
+        change_usd = tools.str_change_percentage(
+            row["start_value_usd"], row["end_value_usd"]
+        )
+    
+    ax[0].set_ylabel(f"Value in BTC", size=10)    
+    ax[0].plot(
+            [ data["date"].iloc[0], data["date"].iloc[-1]],
+            [row["start_value_btc"], row["start_value_btc"]],
+            "--",
+            label="Investment",
+            color="black",
+            linewidth=0.75,
+        )
+    ax[0].plot(data["date"], data["value_btc"], label= change_btc, color="red", linewidth=0.75)
+    ax[0].legend(prop={"size": 10})
+    
+
+    ax[1].set_ylabel(f"Value in USD", size=10)
+    ax[1].plot(
+            [ data["date"].iloc[0], data["date"].iloc[-1]],
+            [row["start_value_usd"], row["start_value_usd"]],
+            "--",
+            label="Investment",
+            color="black",
+            linewidth=0.75,
+        )
+    ax[1].plot(data["date"], data["value_usd"], label=change_usd, color="blue", linewidth=0.75)
+    ax[1].legend(prop={"size": 10})
+
+    plt.savefig("./reports/img/" + str(index) + ".jpg", dpi=100, bbox_inches="tight")
+    plt.close()
     
 
 
