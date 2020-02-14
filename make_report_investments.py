@@ -305,6 +305,7 @@ def create_fig_evo_investment(index, row, data, is_active):
     data["date"] = pd.to_datetime(data["time_re"], unit="s")
     
     if data.shape[0] < 2:
+        plt.close()
         return
     
     # time Format
