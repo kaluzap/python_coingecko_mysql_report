@@ -11,7 +11,7 @@ import utils.handle_db as hdb
 import utils.tools as tools
 
 
-def read_investments_file(name):
+def read_investments_file(name, inv_id):
 
     # loading file
     df_inv = pd.read_csv(name, skipinitialspace=True)
@@ -27,10 +27,13 @@ def read_investments_file(name):
     # Time differences
     df_inv["delta_t"] = df_inv["end_date"] - df_inv["start_date"]
 
-    # removinf white spaces
+    # removing white spaces
     df_inv["type"] = df_inv["type"].apply(lambda x: x.replace(" ", ""))
     df_inv["coin"] = df_inv["coin"].apply(lambda x: x.replace(" ", ""))
 
+    if inv_id is not None:
+        df_inv = df_inv[df_inv.index == int(inv_id)]
+        
     return df_inv
 
 
@@ -66,7 +69,7 @@ def main(args):
     
     
     # loading investments
-    df_inv = read_investments_file(args.investments)
+    df_inv = read_investments_file(args.investments, args.inv_id)
 
     
     # creating totals dataframes
@@ -199,27 +202,13 @@ def main(args):
         # print only if we want active investments
         if (args.status == "active") and (is_active == False):
             continue
-
         if (args.status == "inactive") and (is_active == True):
             continue
-        
         
         #Create figures and report for the investments
         create_fig_evo_investment(index, row, df_temp, is_active)
         
-        if is_active:
-            if row['type'] == 'fiat':
-                pass
-            else:
-                pass
-        else:
-            if row['type'] == 'fiat':
-                pass
-            else:
-                pass
-        #report_file = open("./reports/report_totals.html", "w")
-        
-        print(f"Investment {index+1}")
+        print(f"Investment (inv_id) {index}")
         print("Coin: ", row["coin"])
         print("Investment type: ", row["type"])
         print("Amount: ", row["amount"])
@@ -261,22 +250,17 @@ def main(args):
     df_inv['link'] = df_inv.index.map(lambda x : f'<a href="#{x}">[link]</a>' )
     
     #printing tables
-    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html(escape=False)
-    report_file_fiat_active.write(text)
-    write_report_data_frame(df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)], report_file_fiat_active, "Aqui aqui")
+    table = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html(escape=False)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == True)], report_file_fiat_active, "Fiat Active Investments", table)
     
+    table = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html(escape=False)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)], report_file_fiat_inactive, "Fiat Inactive Investments", table)
     
-    text = df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html(escape=False)
-    report_file_fiat_inactive.write(text)
-    write_report_data_frame(df_inv[(df_inv['type'] == 'fiat') & (df_inv['active'] == False)], report_file_fiat_inactive, "Aqui aqui")
+    table = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html(escape=False)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)], report_file_crypto_active, "Crypto Active Investments", table)
     
-    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)].drop(columns=['end_date', 'end_value_btc', 'end_value_usd', 'active']).to_html(escape=False)
-    report_file_crypto_active.write(text)
-    write_report_data_frame(df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == True)], report_file_crypto_active, "Aqui aqui")
-    
-    text = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html(escape=False)
-    report_file_crypto_inactive.write(text)
-    write_report_data_frame(df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)], report_file_crypto_inactive, "Aqui aqui")
+    table = df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)].drop(columns=['actual_value_btc', 'actual_value_usd', 'active']).to_html(escape=False)
+    write_report_data_frame(df_inv[(df_inv['type'] == 'crypto') & (df_inv['active'] == False)], report_file_crypto_inactive, "Crypto Inactive Investments", table)
     
     report_file_fiat_active.close()
     report_file_fiat_inactive.close()
@@ -284,13 +268,53 @@ def main(args):
     report_file_crypto_inactive.close()
     
 
-def write_report_data_frame(data, file_output, label):
+def write_report_data_frame(data, file_output, label, table):
+    
+    text = '<a name="start"></a>'
+    file_output.write(text + "\n")
+    
+    text = f'<p><font size="6" color="black"> {label}</font></p>'
+    file_output.write(text + "\n")
+    
+    file_output.write(table)
     
     for index, row in data.iterrows():
+        
         text = f'<a name="{index}"></a>'
         file_output.write(text + "\n")
+        
+        text = f'<p><font size="5" color="black"> {index} - {row["coin"]}</font></p>'
+        file_output.write(text + "\n")
+    
+        if row['active']:
+            last_btc = row['actual_value_btc']
+            last_usd = row['actual_value_usd']
+        else:
+            last_btc = row['end_value_btc']
+            last_usd = row['end_value_usd']
+        
+        text = f'<p><font size="2" color="black">'
+        text += f'Amount: {row["amount"]:f}<br>'
+        text += f'Time: {row["delta_t"].days} days</p>'
+        file_output.write(text)
+        
+        text = f'<p><font size="2" color="black">'
+        text += f'BTC initial: {row["start_value_btc"]:.5f}<br>'
+        text += f'BTC final: {last_btc:.5f}<br>'
+        text += f'BTC delta: {last_btc - row["start_value_btc"]:.5f} ({tools.str_change_percentage(row["start_value_btc"],last_btc)})</p>'
+        file_output.write(text)
+        
+        text = f'<p><font size="2" color="black">'
+        text += f'USD initial: {row["start_value_usd"]:.2f}<br>'
+        text += f'USD final: {last_usd:.2f}<br>'
+        text += f'USD delta: {last_usd - row["start_value_usd"]:.2f} ({tools.str_change_percentage(row["start_value_usd"],last_usd)})</p>'
+        file_output.write(text)
+        
         text = f'<figure> <img src = "./img/{index}.jpg"> </figure>'
         file_output.write(text)
+        
+        text = '<a href="#start">[start]</a>'
+        file_output.write(text + "\n")
 
 
 def create_fig_evo_investment(index, row, data, is_active):
@@ -380,6 +404,9 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     # file with the output
     report_file = open("./reports/report_totals.html", "w")
 
+    text = '<a name="start"></a>'
+    report_file.write(text + "\n")
+    
     # initial links
     text = '<a href="#usd_short">[Totals USD 24hs]</a>'
     report_file.write(text + "\n")
@@ -390,17 +417,14 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = '<a href="#btc_long">[Totals BTC all]</a>'
     report_file.write(text + "\n")
 
-    #text = df_inv.to_html()
-    #report_file.write(text)
-
+   
+    #report usd evolutions short
     text = "<p></p>\n<p></p>\n<p></p>\n"
     report_file.write(text)
 
     text = '<a name="usd_short"></a>'
     report_file.write(text + "\n")
     
-    
-    #report usd volutions short
     text = '<p><font size="6" color="black"> Totals in USD 24hs</font></p>'
     report_file.write(text + "\n")
     
@@ -416,11 +440,12 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = f'<p><font size="4" color="black"> Total Fiat in USD: {aaa}</font></p>'
     report_file.write(text + "\n") 
     
-    
-
     text = '<figure> <img src = "./img/Totals_in_USD_small.jpg"> </figure>'
     report_file.write(text + "\n\n")
-
+    
+    text = '<a href="#start">[start]</a>'
+    report_file.write(text + "\n")
+    
     text = '<a name="usd_long"></a>'
     report_file.write(text + "\n")
 
@@ -429,7 +454,13 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
 
     text = '<figure> <img src = "./img/Totals_in_USD_big.jpg"> </figure>'
     report_file.write(text + "\n\n")
-
+    
+    text = '<a href="#start">[start]</a>'
+    report_file.write(text + "\n")
+    
+    
+    
+    #report btc evolutions short
     text = "<p></p>\n<p></p>\n<p></p>\n"
     report_file.write(text)
 
@@ -451,11 +482,12 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = f'<p><font size="4" color="black"> Total Fiat in BTC: {aaa}</font></p>'
     report_file.write(text + "\n") 
     
-    
-
     text = '<figure> <img src = "./img/Totals_in_BTC_small.jpg"> </figure>'
     report_file.write(text + "\n\n")
 
+    text = '<a href="#start">[start]</a>'
+    report_file.write(text + "\n")
+    
     text = '<a name="btc_long"></a>'
     report_file.write(text + "\n")
 
@@ -464,6 +496,9 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
 
     text = '<figure> <img src = "./img/Totals_in_BTC_big.jpg"> </figure>'
     report_file.write(text + "\n\n")
+    
+    text = '<a href="#start">[start]</a>'
+    report_file.write(text + "\n")
     
     report_file.close()
 
@@ -605,7 +640,14 @@ if __name__ == "__main__":
         default="active",
         help="specify active or inactive investments.",
     )
-
+    
+    parser.add_argument(
+        "--inv_id",
+        required=False,
+        default=None,
+        help="specify a particular id (index) investments.",
+    )
+    
     print("Evolutions of the investments as function of time in usd and BTC.")
 
     # Computing command line arguments
