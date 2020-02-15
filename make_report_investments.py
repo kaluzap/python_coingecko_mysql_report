@@ -428,17 +428,15 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = '<p><font size="6" color="black"> Totals in USD 24hs</font></p>'
     report_file.write(text + "\n")
     
+    
     aaa = round(df_inv[df_inv['active']==True]['actual_value_usd'].sum(), 2)
-    text = f'<p><font size="4" color="black"> Total All in USD: {aaa}</font></p>'
-    report_file.write(text + "\n")
-    
+    text = f'<p><font size="3" color="black"> Total All in USD: {aaa}<br>'
     aaa = round(df_inv[ (df_inv['type']=='crypto') & (df_inv['active']==True)]['actual_value_usd'].sum(), 2)
-    text = f'<p><font size="4" color="black"> Total Crypto in USD: {aaa}</font></p>'
-    report_file.write(text + "\n")    
-    
+    text += f'Total Crypto in USD: {aaa}<br>'
     aaa = round(df_inv[ (df_inv['type']=='fiat') & (df_inv['active']==True)]['actual_value_usd'].sum(), 2)
-    text = f'<p><font size="4" color="black"> Total Fiat in USD: {aaa}</font></p>'
+    text += f'Total Fiat in USD: {aaa}</font></p>'
     report_file.write(text + "\n") 
+    
     
     text = '<figure> <img src = "./img/Totals_in_USD_small.jpg"> </figure>'
     report_file.write(text + "\n\n")
@@ -470,17 +468,15 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = '<p><font size="6" color="black"> Totals in BTC 24hs</font></p>'
     report_file.write(text + "\n")
     
+    
     aaa = round(df_inv[df_inv['active']==True]['actual_value_btc'].sum(), 5)
-    text = f'<p><font size="4" color="black"> Total All in BTC: {aaa}</font></p>'
+    text = f'<p><font size="4" color="black"> Total All in BTC: {aaa}<br>'
+    aaa = round(df_inv[ (df_inv['type']=='crypto') & (df_inv['active']==True)]['actual_value_btc'].sum(), 5)
+    text += f'Total Crypto in BTC: {aaa}<br>'
+    aaa = round(df_inv[ (df_inv['type']=='fiat') & (df_inv['active']==True)]['actual_value_btc'].sum(), 5)
+    text += f'Total Fiat in BTC: {aaa}</font></p>'
     report_file.write(text + "\n")
     
-    aaa = round(df_inv[ (df_inv['type']=='crypto') & (df_inv['active']==True)]['actual_value_btc'].sum(), 5)
-    text = f'<p><font size="4" color="black"> Total Crypto in BTC: {aaa}</font></p>'
-    report_file.write(text + "\n")    
-    
-    aaa = round(df_inv[ (df_inv['type']=='fiat') & (df_inv['active']==True)]['actual_value_btc'].sum(), 5)
-    text = f'<p><font size="4" color="black"> Total Fiat in BTC: {aaa}</font></p>'
-    report_file.write(text + "\n") 
     
     text = '<figure> <img src = "./img/Totals_in_BTC_small.jpg"> </figure>'
     report_file.write(text + "\n\n")
