@@ -417,7 +417,19 @@ def print_report_totals(df_inv, totals_usd, totals_btc):
     text = '<a href="#btc_long">[Totals BTC all]</a>'
     report_file.write(text + "\n")
 
-   
+    text = '<p><font size="6" color="black"> Statistics</font></p>'
+    report_file.write(text + "\n")
+    text = f'<p><font size="3" color="black"> DataFrame rows: {totals_usd.shape[0]}<br>'
+    date_ini = datetime.fromtimestamp(totals_usd["time_re"].iloc[0])
+    date_fin = datetime.fromtimestamp(totals_usd["time_re"].iloc[-1])
+    text += f'Date initial: {date_ini}<br>'
+    text += f'Date final  : {date_fin}<br>'
+    text += f'Delta time  : {(date_fin - date_ini).days} days</font></p>'
+    report_file.write(text + "\n") 
+    
+    
+    
+    
     #report usd evolutions short
     text = "<p></p>\n<p></p>\n<p></p>\n"
     report_file.write(text)
