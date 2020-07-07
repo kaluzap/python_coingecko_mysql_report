@@ -157,7 +157,7 @@ while True:
             cursor.execute(command)
             cnx.commit()
         except:
-            print("Error: some problems adding data for ", one_coin[2])
+            print(f'Error: some problems adding data for "{one_coin["name"]}" ({one_coin["symbol"]}).')
         
     time.sleep(300) #300 it takes like 20seg to do a cycle
 cnx.close()
