@@ -1,16 +1,29 @@
 import requests
 import argparse
 import time
+from datetime import datetime
 
 
-def main(delta, loop):
+def get_block_number():
+    try:
+        x = requests.get('https://chainz.cryptoid.info/lcc/api.dws?q=getblockcount')
+        block_num = int(x.text)
+    except:
+        return 0
+    return block_num
+
     
+def main(delta, loop):
+    last_block = -1
     while True:
         try:
-            x = requests.get('https://chainz.cryptoid.info/lcc/api.dws?q=getblockcount')
-            block_num = int(x.text)
+            block_num = get_block_number()
+            if block_num == last_block:
+                continue
             print(f'Block number: {block_num}')
+            print(f'Date time: {datetime.now().isoformat()[0:19].replace("T", " ")}')
             print(f'LCC time: {float(block_num)/1152.0:.3f}\n')
+            last_block = block_num
         except:
             pass
         if not loop:
