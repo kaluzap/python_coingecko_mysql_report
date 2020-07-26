@@ -39,7 +39,17 @@ class AppDemo(QWidget):
             return
         displayTxt = f'Block number: {block_num}\n'
         displayTxt += f"Date time: {currentTime.toString('hh:mm:ss')}\n"
-        displayTxt += f'LCC time: {float(block_num)/1152.0:.3f}\n'
+        displayTxt += f'LCC time: {float(block_num)/1152.0:.6f}\n'
+        
+        date = float(block_num)/1152.0
+        hora = int((date%1)*24.0)
+        
+        total_seconds = int((date%1)*86400)
+        
+        
+        minutes = int((total_seconds - hora*3600)/60)
+        seconds = total_seconds - hora*3600 - minutes*60
+        displayTxt += f'LCC time: {hora:02.0f}:{minutes:02.0f}:{seconds:02.0f}\n'
         self.lbl.setText(displayTxt)
         last_block = block_num
 
